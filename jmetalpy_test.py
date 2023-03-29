@@ -89,7 +89,3 @@ plt.xlabel("Evaluations (x100)")
 plt.ylabel("Best Fitness")
 plt.grid()
 plt.show()
-
-# sposob 1 - w czasie dzialania
-# sposob 2 - zamiast mutacji
-# zamiast zupełnie losowej zmiany - zgodnie z TOPSIS
