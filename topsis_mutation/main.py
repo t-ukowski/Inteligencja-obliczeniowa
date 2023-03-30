@@ -5,6 +5,7 @@ from jmetal.operator import SBXCrossover, PolynomialMutation, BinaryTournamentSe
 from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
 from .topsis_mutation import TopPercentageAveragingMutation
+import json
 
 class CustomGeneticAlgorithm(GeneticAlgorithm):
 
@@ -59,41 +60,58 @@ def run_experiment(algorithm: CustomGeneticAlgorithm, max_evaluations: int):
 
 
 if __name__ == "__main__":
-    # Read the number of tests to run from the console
-    num_tests = int(input("Enter the number of tests to run: "))
+
+    # Load configuration from the JSON file
+    with open("topsis_mutation/config.json", "r") as config_file:
+        config = json.load(config_file)
+    
+    # Read parameters from the configuration
+    num_tests = config["num_tests"]
+    number_of_variables = config["number_of_variables"]
+    ga_params = config["genetic_algorithm_params"]
+    poly_mutation_params = config["polynomial_mutation_params"]
+    topsis_mutation_params = config["topsis_mutation_params"]
 
     # Initialize the Rastrigin problem
-    problem = Rastrigin(number_of_variables=100)
+    problem = Rastrigin(number_of_variables=number_of_variables)
 
     # Run the experiments
-    poly_history_sum = np.zeros(250)
-    top_percentage_history_sum = np.zeros(250)
+    poly_history_sum = np.zeros(int(ga_params["max_evaluations"]/100))
+    top_percentage_history_sum = np.zeros(int(ga_params["max_evaluations"]/100))
     
     for _ in range(num_tests):
         # PolynomialMutation
         poly_algorithm = CustomGeneticAlgorithm(
             problem=problem,
-            population_size=100,
-            offspring_population_size=100,
-            mutation=PolynomialMutation(probability=1.0 / problem.number_of_variables, distribution_index=20),
+            population_size=ga_params["population_size"],
+            offspring_population_size=ga_params["offspring_population_size"],
+            mutation=PolynomialMutation(
+                probability=poly_mutation_params["probability"],
+                distribution_index=poly_mutation_params["distribution_index"]
+            ),
             crossover=SBXCrossover(probability=0.9, distribution_index=20),
             selection=BinaryTournamentSelection(),
-            termination_criterion=StoppingByEvaluations(max_evaluations=25000)
+            termination_criterion=StoppingByEvaluations(max_evaluations=ga_params["max_evaluations"])
         )
-        poly_history = run_experiment(poly_algorithm, 25000)
+        poly_history = run_experiment(poly_algorithm, ga_params["max_evaluations"])
         poly_history_sum += poly_history
         
         # TopPercentageAveragingMutation
         top_percentage_algorithm = CustomGeneticAlgorithm(
             problem=problem,
-            population_size=100,
-            offspring_population_size=100,
-            mutation=TopPercentageAveragingMutation(probability=1.0 / problem.number_of_variables, top_percentage=0.1, push_strength=0.1, population=[]),
+            population_size=ga_params["population_size"],
+            offspring_population_size=ga_params["offspring_population_size"],
+            mutation=TopPercentageAveragingMutation(
+                probability=topsis_mutation_params["probability"],
+                top_percentage=topsis_mutation_params["top_percentage"],
+                push_strength=topsis_mutation_params["push_strength"],
+                population=[]
+            ),
             crossover=SBXCrossover(probability=0.9, distribution_index=20),
             selection=BinaryTournamentSelection(),
-            termination_criterion=StoppingByEvaluations(max_evaluations=25000)
+            termination_criterion=StoppingByEvaluations(max_evaluations=ga_params["max_evaluations"])
         )
-        top_percentage_history = run_experiment(top_percentage_algorithm, 25000)
+        top_percentage_history = run_experiment(top_percentage_algorithm, ga_params["max_evaluations"])
         
         # Set the population for the mutation object
         top_percentage_algorithm.mutation_operator.set_mutation_population(top_percentage_algorithm.solutions)
@@ -112,7 +130,7 @@ if __name__ == "__main__":
     plt.ylabel("Best Fitness")
     plt.legend()
     plt.grid()
-    plt.savefig("plots/combined_plot.png")
+    plt.savefig("plots/topsis_mutation/combined_plot.png")
     plt.show()
 
     plt.plot(poly_history_avg)
@@ -120,7 +138,7 @@ if __name__ == "__main__":
     plt.xlabel("Evaluations (x100)")
     plt.ylabel("Best Fitness")
     plt.grid()
-    plt.savefig("plots/polynomial_mutation_plot.png")
+    plt.savefig("plots/topsis_mutation/polynomial_mutation_plot.png")
     plt.show()
 
     plt.plot(top_percentage_history_avg)
@@ -128,5 +146,5 @@ if __name__ == "__main__":
     plt.xlabel("Evaluations (x100)")
     plt.ylabel("Best Fitness")
     plt.grid()
-    plt.savefig("plots/top_percentage_averaging_mutation_plot.png")
+    plt.savefig("plots/topsis_mutation/top_percentage_averaging_mutation_plot.png")
     plt.show()
