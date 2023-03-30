@@ -4,7 +4,7 @@ from jmetal.algorithm.singleobjective import GeneticAlgorithm
 from jmetal.operator import SBXCrossover, PolynomialMutation, BinaryTournamentSelection
 from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
-from .topsis_mutation import TopPercentageAveragingMutation
+from .topsis_mutation import TopsisMutation
 import json
 
 class CustomGeneticAlgorithm(GeneticAlgorithm):
@@ -39,7 +39,7 @@ class CustomGeneticAlgorithm(GeneticAlgorithm):
             self.best_fitness_history.append(best_solution.objectives[0])
         
         # Aktualizacja populacji dla obiektu mutacji TopPercentageAveragingMutation
-        if isinstance(self.mutation_operator, TopPercentageAveragingMutation):
+        if isinstance(self.mutation_operator, TopsisMutation):
             self.mutation_operator.population = new_population
 
         return new_population
@@ -101,7 +101,7 @@ if __name__ == "__main__":
             problem=problem,
             population_size=ga_params["population_size"],
             offspring_population_size=ga_params["offspring_population_size"],
-            mutation=TopPercentageAveragingMutation(
+            mutation=TopsisMutation(
                 probability=topsis_mutation_params["probability"],
                 top_percentage=topsis_mutation_params["top_percentage"],
                 push_strength=topsis_mutation_params["push_strength"],

@@ -1,14 +1,14 @@
 from jmetal.operator import PolynomialMutation
 from jmetal.core.solution import FloatSolution
 
-class TopPercentageAveragingMutation(PolynomialMutation):
+class TopsisMutation(PolynomialMutation):
     """
-    TopPercentageAveragingMutation to klasa mutacji, która dziedziczy po PolynomialMutation.
+    TopsisMutation to klasa mutacji, która dziedziczy po PolynomialMutation.
     Implementuje mutację opartą na średniej wartości topowych osobników populacji.
     """
     def __init__(self, probability: float, top_percentage: float, push_strength: float, population=None):
         # Wywołanie konstruktora klasy bazowej
-        super(TopPercentageAveragingMutation, self).__init__(probability=probability)
+        super(TopsisMutation, self).__init__(probability=probability)
         self.top_percentage = top_percentage  # Procent najlepszych osobników do uśrednienia
         self.push_strength = push_strength    # Współczynnik określający siłę przyciągania do uśrednionego topowego osobnika
         self.population = population or []    # Populacja osobników
