@@ -4,70 +4,7 @@ from jmetal.algorithm.singleobjective import GeneticAlgorithm
 from jmetal.operator import SBXCrossover, PolynomialMutation, BinaryTournamentSelection
 from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
-from jmetal.core.solution import FloatSolution
-
-
-class TopPercentageAveragingMutation(PolynomialMutation):
-    """
-    TopPercentageAveragingMutation to klasa mutacji, która dziedziczy po PolynomialMutation.
-    Implementuje mutację opartą na średniej wartości topowych osobników populacji.
-    """
-    def __init__(self, probability: float, top_percentage: float, push_strength: float, population=None):
-        # Wywołanie konstruktora klasy bazowej
-        super(TopPercentageAveragingMutation, self).__init__(probability=probability)
-        self.top_percentage = top_percentage  # Procent najlepszych osobników do uśrednienia
-        self.push_strength = push_strength    # Współczynnik określający siłę przyciągania do uśrednionego topowego osobnika
-        self.population = population or []    # Populacja osobników
-
-    def execute(self, solution: FloatSolution) -> FloatSolution:
-        """
-        Funkcja wykonująca mutację.
-        """
-        # Posortowanie populacji według wartości funkcji celu
-        sorted_population = sorted(self.population, key=lambda x: x.objectives[0])
-
-        # Obliczenie liczby najlepszych osobników do uśrednienia
-        num_top_individuals = int(len(sorted_population) * self.top_percentage)
-        
-        # Zapewniamy, że zostanie wybrany co najmniej jeden osobnik
-        num_top_individuals = max(num_top_individuals, 1)
-
-        # Wybranie topowych osobników
-        top_individuals = sorted_population[:num_top_individuals]
-
-        # Inicjalizacja listy przechowującej uśrednionego osobnika
-        average_individual = [0.0] * solution.number_of_variables
-
-        # Sumowanie wartości zmiennych topowych osobników
-        for individual in top_individuals:
-            for i in range(solution.number_of_variables):
-                average_individual[i] += individual.variables[i]
-        # Obliczenie wartości uśrednionego topowego osobnika
-        for i in range(solution.number_of_variables):
-            average_individual[i] /= num_top_individuals
-
-        # Przesunięcie wartości zmiennych mutowanego osobnika w kierunku uśrednionego osobnika
-        for i in range(solution.number_of_variables):
-            difference = average_individual[i] - solution.variables[i]
-            solution.variables[i] += self.push_strength * difference
-
-            # Sprawdzenie, czy nowa wartość zmiennej nie przekracza granic
-            if solution.variables[i] < solution.lower_bound[i]:
-                solution.variables[i] = solution.lower_bound[i]
-            if solution.variables[i] > solution.upper_bound[i]:
-                solution.variables[i] = solution.upper_bound[i]
-
-        return solution
-
-    def set_mutation_population(self, population):
-        """
-        Metoda do aktualizacji populacji dla obiektu mutacji.
-        """
-        self.population = population
-
-    def get_name(self):
-        return 'Top Percentage Averaging Mutation'
-    
+from .topsis_mutation import TopPercentageAveragingMutation
 
 class CustomGeneticAlgorithm(GeneticAlgorithm):
 
@@ -114,9 +51,11 @@ def run_experiment(algorithm: CustomGeneticAlgorithm, max_evaluations: int):
     print("Solution: ", best_solution.variables)
     print("Fitness: ", best_solution.objectives[0])
 
-    history = np.zeros(max_evaluations // 100)
-    history[:len(algorithm.best_fitness_history)] = algorithm.best_fitness_history
-    return history
+    history_length = max_evaluations // 100
+    padded_history = np.zeros(history_length)
+    padded_history[:len(algorithm.best_fitness_history)] = algorithm.best_fitness_history
+    padded_history[len(algorithm.best_fitness_history):] = algorithm.best_fitness_history[-1]
+    return padded_history
 
 
 if __name__ == "__main__":
@@ -173,7 +112,7 @@ if __name__ == "__main__":
     plt.ylabel("Best Fitness")
     plt.legend()
     plt.grid()
-    plt.savefig("combined_plot.png")
+    plt.savefig("plots/combined_plot.png")
     plt.show()
 
     plt.plot(poly_history_avg)
@@ -181,7 +120,7 @@ if __name__ == "__main__":
     plt.xlabel("Evaluations (x100)")
     plt.ylabel("Best Fitness")
     plt.grid()
-    plt.savefig("polynomial_mutation_plot.png")
+    plt.savefig("plots/polynomial_mutation_plot.png")
     plt.show()
 
     plt.plot(top_percentage_history_avg)
@@ -189,5 +128,5 @@ if __name__ == "__main__":
     plt.xlabel("Evaluations (x100)")
     plt.ylabel("Best Fitness")
     plt.grid()
-    plt.savefig("top_percentage_averaging_mutation_plot.png")
+    plt.savefig("plots/top_percentage_averaging_mutation_plot.png")
     plt.show()
