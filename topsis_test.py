@@ -1,40 +1,57 @@
-import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from jmetal.algorithm.singleobjective import GeneticAlgorithm
 from jmetal.operator import SBXCrossover, PolynomialMutation, BinaryTournamentSelection
 from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
-from typing import List
 from jmetal.core.solution import FloatSolution
-from jmetal.core.operator import Mutation
 
 
 class TopPercentageAveragingMutation(PolynomialMutation):
-
+    """
+    TopPercentageAveragingMutation to klasa mutacji, która dziedziczy po PolynomialMutation.
+    Implementuje mutację opartą na średniej wartości topowych osobników populacji.
+    """
     def __init__(self, probability: float, top_percentage: float, push_strength: float, population=None):
+        # Wywołanie konstruktora klasy bazowej
         super(TopPercentageAveragingMutation, self).__init__(probability=probability)
-        self.top_percentage = top_percentage
-        self.push_strength = push_strength
-        self.population = population or []
+        self.top_percentage = top_percentage  # Procent najlepszych osobników do uśrednienia
+        self.push_strength = push_strength    # Współczynnik określający siłę przyciągania do uśrednionego topowego osobnika
+        self.population = population or []    # Populacja osobników
 
     def execute(self, solution: FloatSolution) -> FloatSolution:
+        """
+        Funkcja wykonująca mutację.
+        """
+        # Posortowanie populacji według wartości funkcji celu
         sorted_population = sorted(self.population, key=lambda x: x.objectives[0])
+
+        # Obliczenie liczby najlepszych osobników do uśrednienia
         num_top_individuals = int(len(sorted_population) * self.top_percentage)
-        # Ensure at least one individual is selected
+        
+        # Zapewniamy, że zostanie wybrany co najmniej jeden osobnik
         num_top_individuals = max(num_top_individuals, 1)
+
+        # Wybranie topowych osobników
         top_individuals = sorted_population[:num_top_individuals]
+
+        # Inicjalizacja listy przechowującej uśrednionego osobnika
         average_individual = [0.0] * solution.number_of_variables
+
+        # Sumowanie wartości zmiennych topowych osobników
         for individual in top_individuals:
             for i in range(solution.number_of_variables):
                 average_individual[i] += individual.variables[i]
+        # Obliczenie wartości uśrednionego topowego osobnika
         for i in range(solution.number_of_variables):
             average_individual[i] /= num_top_individuals
 
+        # Przesunięcie wartości zmiennych mutowanego osobnika w kierunku uśrednionego osobnika
         for i in range(solution.number_of_variables):
             difference = average_individual[i] - solution.variables[i]
             solution.variables[i] += self.push_strength * difference
 
+            # Sprawdzenie, czy nowa wartość zmiennej nie przekracza granic
             if solution.variables[i] < solution.lower_bound[i]:
                 solution.variables[i] = solution.lower_bound[i]
             if solution.variables[i] > solution.upper_bound[i]:
@@ -43,6 +60,9 @@ class TopPercentageAveragingMutation(PolynomialMutation):
         return solution
 
     def set_mutation_population(self, population):
+        """
+        Metoda do aktualizacji populacji dla obiektu mutacji.
+        """
         self.population = population
 
     def get_name(self):
@@ -52,17 +72,35 @@ class TopPercentageAveragingMutation(PolynomialMutation):
 class CustomGeneticAlgorithm(GeneticAlgorithm):
 
     def __init__(self, **kwargs):
+        """
+        Inicjalizacja obiektu CustomGeneticAlgorithm.
+
+        Args:
+            **kwargs: Argumenty przekazywane do konstruktora klasy nadrzędnej GeneticAlgorithm.
+        """
         super().__init__(**kwargs)
-        self.best_fitness_history = []
+        self.best_fitness_history = []  # Lista przechowująca historię najlepszych wartości przystosowania
 
     def replacement(self, population, offspring_population):
+        """
+        Metoda odpowiedzialna za zastępowanie starej populacji nową populacją potomków.
+
+        Args:
+            population: Stara populacja (lista obiektów FloatSolution).
+            offspring_population: Nowa populacja potomków (lista obiektów FloatSolution).
+
+        Returns:
+            new_population: Aktualizowana populacja (lista obiektów FloatSolution).
+        """
+        # Wywołanie metody z klasy nadrzędnej
         new_population = super().replacement(population, offspring_population)
 
+        # Rejestrowanie najlepszego rozwiązania co 100 ewaluacji
         if self.evaluations % 100 == 0:
             best_solution = min(new_population, key=lambda x: x.objectives[0])
             self.best_fitness_history.append(best_solution.objectives[0])
         
-        # Update the mutation population
+        # Aktualizacja populacji dla obiektu mutacji TopPercentageAveragingMutation
         if isinstance(self.mutation_operator, TopPercentageAveragingMutation):
             self.mutation_operator.population = new_population
 
@@ -86,7 +124,7 @@ if __name__ == "__main__":
     num_tests = int(input("Enter the number of tests to run: "))
 
     # Initialize the Rastrigin problem
-    problem = Rastrigin(number_of_variables=10)
+    problem = Rastrigin(number_of_variables=100)
 
     # Run the experiments
     poly_history_sum = np.zeros(250)
