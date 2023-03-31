@@ -1,5 +1,5 @@
 {
-  "num_tests": 3,
+  "num_tests": 10,
   "number_of_variables": 100,
   "genetic_algorithm_params": {
     "population_size": 100,
@@ -11,8 +11,8 @@
     "distribution_index": 20
   },
   "topsis_mutation_params": {
-    "probability": 0.01,
-    "top_percentage": 0.1,
-    "push_strength": 0.1
+    "probability": 0.5,
+    "top_percentage": 0.25,
+    "push_strength": 0.25
   }
 }

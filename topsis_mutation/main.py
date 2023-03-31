@@ -139,7 +139,7 @@ if __name__ == "__main__":
     plt.ylabel("Best Fitness")
     plt.grid()
     plt.savefig("plots/topsis_mutation/polynomial_mutation_plot.png")
-    plt.show()
+    # plt.show()
 
     plt.plot(top_percentage_history_avg)
     plt.title("Top Percentage Averaging Mutation - Best Fitness Over Time")
@@ -147,4 +147,4 @@ if __name__ == "__main__":
     plt.ylabel("Best Fitness")
     plt.grid()
     plt.savefig("plots/topsis_mutation/top_percentage_averaging_mutation_plot.png")
-    plt.show()
+    # plt.show()
