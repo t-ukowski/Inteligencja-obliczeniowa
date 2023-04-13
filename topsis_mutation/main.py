@@ -96,15 +96,17 @@ if __name__ == "__main__":
         poly_history = run_experiment(poly_algorithm, ga_params["max_evaluations"])
         poly_history_sum += poly_history
         
-        # TopPercentageAveragingMutation
+        # TopsisMutation
         top_percentage_algorithm = CustomGeneticAlgorithm(
             problem=problem,
             population_size=ga_params["population_size"],
             offspring_population_size=ga_params["offspring_population_size"],
             mutation=TopsisMutation(
                 probability=topsis_mutation_params["probability"],
-                top_percentage=topsis_mutation_params["top_percentage"],
+                selected_percentage=topsis_mutation_params["top_percentage"],
                 push_strength=topsis_mutation_params["push_strength"],
+                best=topsis_mutation_params["toBest"],
+                worst=topsis_mutation_params["fromWorst"],
                 population=[]
             ),
             crossover=SBXCrossover(probability=0.9, distribution_index=20),
@@ -124,7 +126,7 @@ if __name__ == "__main__":
 
 
     plt.plot(poly_history_avg, label="Polynomial Mutation")
-    plt.plot(top_percentage_history_avg, label="Top Percentage Averaging Mutation")
+    plt.plot(top_percentage_history_avg, label="Topsis Mutation")
     plt.title("Best Fitness Over Time")
     plt.xlabel("Evaluations (x100)")
     plt.ylabel("Best Fitness")
@@ -142,7 +144,7 @@ if __name__ == "__main__":
     # plt.show()
 
     plt.plot(top_percentage_history_avg)
-    plt.title("Top Percentage Averaging Mutation - Best Fitness Over Time")
+    plt.title("Topsis Mutation - Best Fitness Over Time")
     plt.xlabel("Evaluations (x100)")
     plt.ylabel("Best Fitness")
     plt.grid()

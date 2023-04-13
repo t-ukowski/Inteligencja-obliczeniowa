@@ -6,10 +6,10 @@ class TopsisMutation(PolynomialMutation):
     TopsisMutation to klasa mutacji, która dziedziczy po PolynomialMutation.
     Implementuje mutację opartą na średniej wartości topowych osobników populacji.
     """
-    def __init__(self, probability: float, top_percentage: float, push_strength: float, best=True, worst=False, population=None):
+    def __init__(self, probability: float, selected_percentage: float, push_strength: float, best=True, worst=False, population=None):
         # Wywołanie konstruktora klasy bazowej
         super(TopsisMutation, self).__init__(probability=probability)
-        self.top_percentage = top_percentage  # Procent najlepszych osobników do uśrednienia
+        self.selected_percentage = selected_percentage  # Procent najlepszych/najgorszych osobników do uśrednienia
         self.push_strength = push_strength    # Współczynnik określający siłę przyciągania do uśrednionego topowego osobnika
         self.population = population or []    # Populacja osobników
         self.best = best
@@ -24,7 +24,7 @@ class TopsisMutation(PolynomialMutation):
         sorted_population = sorted(self.population, key=lambda x: x.objectives[0])
 
         # Obliczenie liczby osobników do uśrednienia
-        num_individuals = int(len(sorted_population) * self.top_percentage)
+        num_individuals = int(len(sorted_population) * self.selected_percentage)
         
         # Zapewniamy, że zostanie wybrany co najmniej jeden osobnik
         num_individuals = max(num_individuals, 1)
