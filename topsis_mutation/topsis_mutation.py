@@ -50,10 +50,6 @@ class TopsisMutation(PolynomialMutation):
             # Inicjalizacja listy przechowującej uśrednionego najlepszego osobnika
             average_best_individual = [0.0] * solution.number_of_variables
 
-            # # Losowe wektory do modyfikacji kąta, jeśli flaga jest aktywna
-            # if self.randomized_angle:
-            #     random_vectors = random_vector_in_angle_range(90, solution.number_of_variables)
-
             # Sumowanie wartości zmiennych topowych osobników
             for individual in top_individuals:
                 for i in range(solution.number_of_variables):
@@ -69,11 +65,10 @@ class TopsisMutation(PolynomialMutation):
             for i in range(solution.number_of_variables):
                 difference = average_best_individual[i] - solution.variables[i]
 
-                # # Dodanie losowości dla kierunku wektora, jeśli flaga jest aktywna
-                # if self.randomized_angle:
-                #     difference += random_vectors[i]
+                # Przyciągamy się do losowego punktu w kwadracie między obecnym osobnikiem a uśrednionym docelowym
                 if self.randomized_point:
                     difference = random_point[i] - solution.variables[i]
+                # Dodanie losowości dla kierunku wektora, jeśli flaga jest aktywna
                 if self.randomized_angle:
                     scale_factor = abs(difference) / 2
                     random_vectors = scaled_random_vector_in_angle_range(90, 1, scale_factor)
@@ -91,10 +86,6 @@ class TopsisMutation(PolynomialMutation):
             # Inicjalizacja listy przechowującej uśrednionego najgorszego osobnika
             average_worst_individual = [0.0] * solution.number_of_variables
 
-            # # Losowe wektory do modyfikacji kąta, jeśli flaga jest aktywna
-            # if self.randomized_angle:
-            #     random_vectors = random_vector_in_angle_range(90, solution.number_of_variables)
-
             # Sumowanie wartości zmiennych najgorszych osobników
             for individual in bottom_individuals:
                 for i in range(solution.number_of_variables):
@@ -111,11 +102,10 @@ class TopsisMutation(PolynomialMutation):
             for i in range(solution.number_of_variables):
                 difference = solution.variables[i] - average_worst_individual[i]
 
-                # # Dodanie losowości dla kierunku wektora, jeśli flaga jest aktywna
-                # if self.randomized_angle:
-                #     difference += random_vectors[i]
+                # Przyciągamy się do losowego punktu w kwadracie między obecnym osobnikiem a uśrednionym docelowym
                 if self.randomized_point:
-                    difference = random_point[i] - solution.variables[i]
+                    difference = solution.variables[i] - random_point[i]
+                # Dodanie losowości dla kierunku wektora, jeśli flaga jest aktywna
                 if self.randomized_angle:
                     scale_factor = abs(difference) / 2
                     random_vectors = scaled_random_vector_in_angle_range(90, 1, scale_factor)

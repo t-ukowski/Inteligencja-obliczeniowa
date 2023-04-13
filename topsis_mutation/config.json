@@ -1,5 +1,5 @@
 {
-  "num_tests": 3,
+  "num_tests": 10,
   "number_of_variables": 100,
   "genetic_algorithm_params": {
     "population_size": 100,
@@ -17,6 +17,6 @@
     "toBest": true,
     "fromWorst": true,
     "randomizedAngle": true,
-    "randomizedPoint": false
+    "randomizedPoint": true
   }
 }
