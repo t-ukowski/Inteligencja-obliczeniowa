@@ -17,6 +17,6 @@
     "toBest": true,
     "fromWorst": true,
     "randomizedAngle": true,
-    "randomizedPoint": true
+    "randomizedPoint": false
   }
 }
