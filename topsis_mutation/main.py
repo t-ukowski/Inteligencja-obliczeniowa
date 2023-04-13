@@ -107,6 +107,8 @@ if __name__ == "__main__":
                 push_strength=topsis_mutation_params["push_strength"],
                 best=topsis_mutation_params["toBest"],
                 worst=topsis_mutation_params["fromWorst"],
+                randomized_angle=topsis_mutation_params["randomizedAngle"],
+                randomized_point=topsis_mutation_params["randomizedPoint"],
                 population=[]
             ),
             crossover=SBXCrossover(probability=0.9, distribution_index=20),
