@@ -71,6 +71,8 @@ if __name__ == "__main__":
     ga_params = config["genetic_algorithm_params"]
     poly_mutation_params = config["polynomial_mutation_params"]
     topsis_mutation_params = config["topsis_mutation_params"]
+    exp_1_params = config["exp1_params"]
+    exp_2_params = config["exp2_params"]
 
     # Initialize the Rastrigin problem
     problem = Rastrigin(number_of_variables=number_of_variables)
@@ -78,6 +80,8 @@ if __name__ == "__main__":
     # Run the experiments
     poly_history_sum = np.zeros(int(ga_params["max_evaluations"]/100))
     top_percentage_history_sum = np.zeros(int(ga_params["max_evaluations"]/100))
+    exp_1_history_sum = np.zeros(int(ga_params["max_evaluations"]/100))
+    exp_2_history_sum = np.zeros(int(ga_params["max_evaluations"]/100))
     
     for _ in range(num_tests):
         # PolynomialMutation
@@ -122,9 +126,74 @@ if __name__ == "__main__":
 
         top_percentage_history_sum += top_percentage_history
 
+
+        # Experiment 1
+        exp_1_algorithm = CustomGeneticAlgorithm(
+            problem=problem,
+            population_size=ga_params["population_size"],
+            offspring_population_size=ga_params["offspring_population_size"],
+            mutation=TopsisMutation(
+                probability=exp_1_params["probability"],
+                selected_percentage=exp_1_params["top_percentage"],
+                push_strength=exp_1_params["push_strength"],
+                best=exp_1_params["toBest"],
+                worst=exp_1_params["fromWorst"],
+                randomized_angle=exp_1_params["randomizedAngle"],
+                randomized_point=exp_1_params["randomizedPoint"],
+                population=[]
+            ),
+            crossover=SBXCrossover(probability=0.9, distribution_index=20),
+            selection=BinaryTournamentSelection(),
+            termination_criterion=StoppingByEvaluations(max_evaluations=ga_params["max_evaluations"])
+        )
+        exp_1_history = run_experiment(exp_1_algorithm, ga_params["max_evaluations"])
+        # Set the population for the mutation object
+        exp_1_algorithm.mutation_operator.set_mutation_population(exp_1_algorithm.solutions)
+        exp_1_history_sum += exp_1_history
+
+
+        # Experiment 2
+        exp_2_algorithm = CustomGeneticAlgorithm(
+            problem=problem,
+            population_size=ga_params["population_size"],
+            offspring_population_size=ga_params["offspring_population_size"],
+            mutation=TopsisMutation(
+                probability=exp_2_params["probability"],
+                selected_percentage=exp_2_params["top_percentage"],
+                push_strength=exp_2_params["push_strength"],
+                best=exp_2_params["toBest"],
+                worst=exp_2_params["fromWorst"],
+                randomized_angle=exp_2_params["randomizedAngle"],
+                randomized_point=exp_2_params["randomizedPoint"],
+                population=[]
+            ),
+            crossover=SBXCrossover(probability=0.9, distribution_index=20),
+            selection=BinaryTournamentSelection(),
+            termination_criterion=StoppingByEvaluations(max_evaluations=ga_params["max_evaluations"])
+        )
+        exp_2_history = run_experiment(exp_2_algorithm, ga_params["max_evaluations"])
+        # Set the population for the mutation object
+        exp_2_algorithm.mutation_operator.set_mutation_population(exp_2_algorithm.solutions)
+        exp_2_history_sum += exp_2_history
+
+
     # Calculate average histories
     poly_history_avg = poly_history_sum / num_tests
     top_percentage_history_avg = top_percentage_history_sum / num_tests
+    exp_1_history_avg = exp_1_history_sum / num_tests
+    exp_2_history_avg = exp_2_history_sum / num_tests
+
+    # Exp 1 to TOPSIS comparison
+    plt.plot(top_percentage_history_avg, label="Topsis Mutation (Push, Pull)")
+    plt.plot(exp_1_history_avg, label="Topsis Mutation (Push, Pull, Angle)")
+    plt.plot(exp_2_history_avg, label="Topsis Mutation (Push, Pull, Point)")
+    plt.title("Best Fitness Over Time")
+    plt.xlabel("Evaluations (x100)")
+    plt.ylabel("Best Fitness")
+    plt.legend()
+    plt.grid()
+    plt.savefig("plots/topsis_mutation/experiment1_combined_plot.png")
+    plt.show()
 
 
     plt.plot(poly_history_avg, label="Polynomial Mutation")
@@ -135,7 +204,7 @@ if __name__ == "__main__":
     plt.legend()
     plt.grid()
     plt.savefig("plots/topsis_mutation/combined_plot.png")
-    plt.show()
+    # plt.show()
 
     plt.plot(poly_history_avg)
     plt.title("Polynomial Mutation - Best Fitness Over Time")
@@ -152,3 +221,6 @@ if __name__ == "__main__":
     plt.grid()
     plt.savefig("plots/topsis_mutation/top_percentage_averaging_mutation_plot.png")
     # plt.show()
+
+
+# Tests and comparisons: 
