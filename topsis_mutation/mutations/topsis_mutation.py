@@ -4,12 +4,14 @@ from jmetal.operator import PolynomialMutation
 from jmetal.core.solution import FloatSolution
 
 def scaled_random_vector_in_angle_range(angle_range_degrees: float, dimensions: int, scale_factor: float) -> list:
-    random_angles = [random.uniform(-angle_range_degrees / 2, angle_range_degrees / 2) for _ in range(dimensions)]
-    random_vectors = [scale_factor * math.cos(math.radians(angle)) for angle in random_angles]
-    return random_vectors
+    half_angle_range = angle_range_degrees / 2
+    return [scale_factor * math.cos(math.radians(random.uniform(-half_angle_range, half_angle_range))) for _ in range(dimensions)]
 
 def random_point_in_bounding_box(lower_bound, upper_bound, dimensions):
     return [random.uniform(lower_bound[i], upper_bound[i]) for i in range(dimensions)]
+
+def calculate_average_individual(individuals, num_individuals, number_of_variables):
+    return [sum(individual.variables[i] for individual in individuals) / num_individuals for i in range(number_of_variables)]
 
 class TopsisMutation(PolynomialMutation):
     """
@@ -50,13 +52,8 @@ class TopsisMutation(PolynomialMutation):
             # Inicjalizacja listy przechowującej uśrednionego najlepszego osobnika
             average_best_individual = [0.0] * solution.number_of_variables
 
-            # Sumowanie wartości zmiennych topowych osobników
-            for individual in top_individuals:
-                for i in range(solution.number_of_variables):
-                    average_best_individual[i] += individual.variables[i]
             # Obliczenie wartości uśrednionego topowego osobnika
-            for i in range(solution.number_of_variables):
-                average_best_individual[i] /= num_individuals
+            average_best_individual = calculate_average_individual(top_individuals, num_individuals, solution.number_of_variables)
             
             if self.randomized_point:
                 random_point = random_point_in_bounding_box(solution.variables, average_best_individual, solution.number_of_variables)
@@ -77,22 +74,14 @@ class TopsisMutation(PolynomialMutation):
                 solution.variables[i] += self.push_strength * difference
 
                 # Sprawdzenie, czy nowa wartość zmiennej nie przekracza granic
-                if solution.variables[i] < solution.lower_bound[i]:
-                    solution.variables[i] = solution.lower_bound[i]
-                if solution.variables[i] > solution.upper_bound[i]:
-                    solution.variables[i] = solution.upper_bound[i]
+                solution.variables[i] = max(solution.lower_bound[i], min(solution.variables[i], solution.upper_bound[i]))
 
         if self.worst:
             # Inicjalizacja listy przechowującej uśrednionego najgorszego osobnika
             average_worst_individual = [0.0] * solution.number_of_variables
 
-            # Sumowanie wartości zmiennych najgorszych osobników
-            for individual in bottom_individuals:
-                for i in range(solution.number_of_variables):
-                    average_worst_individual[i] += individual.variables[i]
             # Obliczenie wartości uśrednionego najgorszego osobnika
-            for i in range(solution.number_of_variables):
-                average_worst_individual[i] /= num_individuals
+            average_worst_individual = calculate_average_individual(bottom_individuals, num_individuals, solution.number_of_variables)
 
             if self.randomized_point:
                 random_point = random_point_in_bounding_box(solution.variables, average_worst_individual, solution.number_of_variables)
@@ -114,10 +103,7 @@ class TopsisMutation(PolynomialMutation):
                 solution.variables[i] += self.push_strength * difference
 
                 # Sprawdzenie, czy nowa wartość zmiennej nie przekracza granic
-                if solution.variables[i] < solution.lower_bound[i]:
-                    solution.variables[i] = solution.lower_bound[i]
-                if solution.variables[i] > solution.upper_bound[i]:
-                    solution.variables[i] = solution.upper_bound[i]
+                solution.variables[i] = max(solution.lower_bound[i], min(solution.variables[i], solution.upper_bound[i]))
 
         return solution
 
