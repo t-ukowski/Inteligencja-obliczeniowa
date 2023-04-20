@@ -128,4 +128,4 @@ class TopsisMutation(PolynomialMutation):
         self.population = population
 
     def get_name(self):
-        return 'Top Percentage Averaging Mutation'
+        return 'Topsis Mutation'

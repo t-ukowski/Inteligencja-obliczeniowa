@@ -1,5 +1,6 @@
 {
-  "num_tests": 7,
+  "num_tests": 1,
+  "problem": "ackley",
   "number_of_variables": 100,
   "genetic_algorithm_params": {
     "population_size": 100,
@@ -10,7 +11,7 @@
     "probability": 0.01,
     "distribution_index": 20
   },
-  "topsis_mutation_params": {
+  "topsis1_params": {
     "probability": 0.01,
     "top_percentage": 0.2,
     "push_strength": 0.1,
@@ -19,7 +20,7 @@
     "randomizedAngle": false,
     "randomizedPoint": false
   },
-  "exp1_params": {
+  "topsis2_params": {
     "probability": 0.01,
     "top_percentage": 0.2,
     "push_strength": 0.1,
@@ -28,7 +29,7 @@
     "randomizedAngle": true,
     "randomizedPoint": false
   },
-  "exp2_params": {
+  "topsis3_params": {
     "probability": 0.01,
     "top_percentage": 0.2,
     "push_strength": 0.1,

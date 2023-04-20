@@ -1,10 +1,16 @@
+# Utils
 import numpy as np
 import matplotlib.pyplot as plt
+# JMetalPy
 from jmetal.algorithm.singleobjective import GeneticAlgorithm
 from jmetal.operator import SBXCrossover, PolynomialMutation, BinaryTournamentSelection
-from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from jmetal.util.termination_criterion import StoppingByEvaluations
-from .topsis_mutation import TopsisMutation
+# Mutations
+from topsis_mutation.mutations.topsis_mutation import TopsisMutation
+# Problems
+from jmetal.problem.singleobjective.unconstrained import Rastrigin
+from topsis_mutation.problems.ackley import Ackley
+from topsis_mutation.problems.schwefel import Schwefel
 import json
 
 class CustomGeneticAlgorithm(GeneticAlgorithm):
@@ -70,18 +76,27 @@ if __name__ == "__main__":
     number_of_variables = config["number_of_variables"]
     ga_params = config["genetic_algorithm_params"]
     poly_mutation_params = config["polynomial_mutation_params"]
-    topsis_mutation_params = config["topsis_mutation_params"]
-    exp_1_params = config["exp1_params"]
-    exp_2_params = config["exp2_params"]
+    topsis1_params = config["topsis1_params"]
+    topsis2_params = config["topsis2_params"]
+    topsis3_params = config["topsis3_params"]
 
-    # Initialize the Rastrigin problem
-    problem = Rastrigin(number_of_variables=number_of_variables)
+    # Initialize the problem
+    problemType = config["problem"]
+    match problemType:
+        case "rastrigin":
+            problem = Rastrigin(number_of_variables=number_of_variables)
+        case "ackley":
+            problem = Ackley(number_of_variables=number_of_variables)
+        case "schwefel":
+            problem = Schwefel(number_of_variables=number_of_variables)
+        case _:
+            problem = Rastrigin(number_of_variables=number_of_variables)
 
     # Run the experiments
     poly_history_sum = np.zeros(int(ga_params["max_evaluations"]/100))
-    top_percentage_history_sum = np.zeros(int(ga_params["max_evaluations"]/100))
-    exp_1_history_sum = np.zeros(int(ga_params["max_evaluations"]/100))
-    exp_2_history_sum = np.zeros(int(ga_params["max_evaluations"]/100))
+    topsis1_history_sum = np.zeros(int(ga_params["max_evaluations"]/100))
+    topsis2_history_sum = np.zeros(int(ga_params["max_evaluations"]/100))
+    topsis3_history_sum = np.zeros(int(ga_params["max_evaluations"]/100))
     
     for _ in range(num_tests):
         # PolynomialMutation
@@ -100,110 +115,128 @@ if __name__ == "__main__":
         poly_history = run_experiment(poly_algorithm, ga_params["max_evaluations"])
         poly_history_sum += poly_history
         
-        # TopsisMutation
-        top_percentage_algorithm = CustomGeneticAlgorithm(
+        # TopsisMutation 1
+        topsis1_algorithm = CustomGeneticAlgorithm(
             problem=problem,
             population_size=ga_params["population_size"],
             offspring_population_size=ga_params["offspring_population_size"],
             mutation=TopsisMutation(
-                probability=topsis_mutation_params["probability"],
-                selected_percentage=topsis_mutation_params["top_percentage"],
-                push_strength=topsis_mutation_params["push_strength"],
-                best=topsis_mutation_params["toBest"],
-                worst=topsis_mutation_params["fromWorst"],
-                randomized_angle=topsis_mutation_params["randomizedAngle"],
-                randomized_point=topsis_mutation_params["randomizedPoint"],
+                probability=topsis1_params["probability"],
+                selected_percentage=topsis1_params["top_percentage"],
+                push_strength=topsis1_params["push_strength"],
+                best=topsis1_params["toBest"],
+                worst=topsis1_params["fromWorst"],
+                randomized_angle=topsis1_params["randomizedAngle"],
+                randomized_point=topsis1_params["randomizedPoint"],
                 population=[]
             ),
             crossover=SBXCrossover(probability=0.9, distribution_index=20),
             selection=BinaryTournamentSelection(),
             termination_criterion=StoppingByEvaluations(max_evaluations=ga_params["max_evaluations"])
         )
-        top_percentage_history = run_experiment(top_percentage_algorithm, ga_params["max_evaluations"])
+        topsis1_history = run_experiment(topsis1_algorithm, ga_params["max_evaluations"])
         
         # Set the population for the mutation object
-        top_percentage_algorithm.mutation_operator.set_mutation_population(top_percentage_algorithm.solutions)
+        topsis1_algorithm.mutation_operator.set_mutation_population(topsis1_algorithm.solutions)
+        
+        topsis1_history_sum += topsis1_history
 
-        top_percentage_history_sum += top_percentage_history
 
-
-        # Experiment 1
-        exp_1_algorithm = CustomGeneticAlgorithm(
+        # TopsisMutation 2
+        topsis2_algorithm = CustomGeneticAlgorithm(
             problem=problem,
             population_size=ga_params["population_size"],
             offspring_population_size=ga_params["offspring_population_size"],
             mutation=TopsisMutation(
-                probability=exp_1_params["probability"],
-                selected_percentage=exp_1_params["top_percentage"],
-                push_strength=exp_1_params["push_strength"],
-                best=exp_1_params["toBest"],
-                worst=exp_1_params["fromWorst"],
-                randomized_angle=exp_1_params["randomizedAngle"],
-                randomized_point=exp_1_params["randomizedPoint"],
+                probability=topsis2_params["probability"],
+                selected_percentage=topsis2_params["top_percentage"],
+                push_strength=topsis2_params["push_strength"],
+                best=topsis2_params["toBest"],
+                worst=topsis2_params["fromWorst"],
+                randomized_angle=topsis2_params["randomizedAngle"],
+                randomized_point=topsis2_params["randomizedPoint"],
                 population=[]
             ),
             crossover=SBXCrossover(probability=0.9, distribution_index=20),
             selection=BinaryTournamentSelection(),
             termination_criterion=StoppingByEvaluations(max_evaluations=ga_params["max_evaluations"])
         )
-        exp_1_history = run_experiment(exp_1_algorithm, ga_params["max_evaluations"])
+        topsis2_history = run_experiment(topsis2_algorithm, ga_params["max_evaluations"])
+        
         # Set the population for the mutation object
-        exp_1_algorithm.mutation_operator.set_mutation_population(exp_1_algorithm.solutions)
-        exp_1_history_sum += exp_1_history
+        topsis2_algorithm.mutation_operator.set_mutation_population(topsis2_algorithm.solutions)
+        
+        topsis2_history_sum += topsis2_history
 
 
-        # Experiment 2
-        exp_2_algorithm = CustomGeneticAlgorithm(
+        # TopsisMutation 3
+        topsis3_algorithm = CustomGeneticAlgorithm(
             problem=problem,
             population_size=ga_params["population_size"],
             offspring_population_size=ga_params["offspring_population_size"],
             mutation=TopsisMutation(
-                probability=exp_2_params["probability"],
-                selected_percentage=exp_2_params["top_percentage"],
-                push_strength=exp_2_params["push_strength"],
-                best=exp_2_params["toBest"],
-                worst=exp_2_params["fromWorst"],
-                randomized_angle=exp_2_params["randomizedAngle"],
-                randomized_point=exp_2_params["randomizedPoint"],
+                probability=topsis3_params["probability"],
+                selected_percentage=topsis3_params["top_percentage"],
+                push_strength=topsis3_params["push_strength"],
+                best=topsis3_params["toBest"],
+                worst=topsis3_params["fromWorst"],
+                randomized_angle=topsis3_params["randomizedAngle"],
+                randomized_point=topsis3_params["randomizedPoint"],
                 population=[]
             ),
             crossover=SBXCrossover(probability=0.9, distribution_index=20),
             selection=BinaryTournamentSelection(),
             termination_criterion=StoppingByEvaluations(max_evaluations=ga_params["max_evaluations"])
         )
-        exp_2_history = run_experiment(exp_2_algorithm, ga_params["max_evaluations"])
+        topsis3_history = run_experiment(topsis3_algorithm, ga_params["max_evaluations"])
+        
         # Set the population for the mutation object
-        exp_2_algorithm.mutation_operator.set_mutation_population(exp_2_algorithm.solutions)
-        exp_2_history_sum += exp_2_history
+        topsis3_algorithm.mutation_operator.set_mutation_population(topsis3_algorithm.solutions)
+        
+        topsis3_history_sum += topsis3_history
 
 
     # Calculate average histories
     poly_history_avg = poly_history_sum / num_tests
-    top_percentage_history_avg = top_percentage_history_sum / num_tests
-    exp_1_history_avg = exp_1_history_sum / num_tests
-    exp_2_history_avg = exp_2_history_sum / num_tests
+    topsis1_history_avg = topsis1_history_sum / num_tests
+    topsis2_history_avg = topsis2_history_sum / num_tests
+    topsis3_history_avg = topsis3_history_sum / num_tests
 
-    # Exp 1 to TOPSIS comparison
-    plt.plot(top_percentage_history_avg, label="Topsis Mutation (Push, Pull)")
-    plt.plot(exp_1_history_avg, label="Topsis Mutation (Push, Pull, Angle)")
-    plt.plot(exp_2_history_avg, label="Topsis Mutation (Push, Pull, Point)")
+    # All experiments comparison
+    plt.plot(poly_history_avg, label="Polynomial Mutation")
+    plt.plot(topsis1_history_avg, label="Topsis Mutation (<params1>)")
+    plt.plot(topsis2_history_avg, label="Topsis Mutation (<params2>)")
+    plt.plot(topsis3_history_avg, label="Topsis Mutation (<params3>)")
     plt.title("Best Fitness Over Time")
-    plt.xlabel("Evaluations (x100)")
+    plt.xlabel("Evaluations (<number>)")
     plt.ylabel("Best Fitness")
     plt.legend()
     plt.grid()
-    plt.savefig("plots/topsis_mutation/experiment1_combined_plot.png")
+    plt.savefig("plots/topsis_mutation/all_combined_plot.png")
     plt.show()
 
+    # Three experiments comparison
+    plt.plot(topsis1_history_avg, label="Topsis Mutation (<params1>)")
+    plt.plot(topsis2_history_avg, label="Topsis Mutation (<params2>)")
+    plt.plot(topsis3_history_avg, label="Topsis Mutation (<params3>)")
+    plt.title("Best Fitness Over Time")
+    plt.xlabel("Evaluations (<number>)")
+    plt.ylabel("Best Fitness")
+    plt.legend()
+    plt.grid()
+    plt.savefig("plots/topsis_mutation/three_combined_plot.png")
+    # plt.show()
 
+
+    # Two experiments comparison
     plt.plot(poly_history_avg, label="Polynomial Mutation")
-    plt.plot(top_percentage_history_avg, label="Topsis Mutation")
+    plt.plot(topsis1_history_avg, label="Topsis Mutation")
     plt.title("Best Fitness Over Time")
     plt.xlabel("Evaluations (x100)")
     plt.ylabel("Best Fitness")
     plt.legend()
     plt.grid()
-    plt.savefig("plots/topsis_mutation/combined_plot.png")
+    plt.savefig("plots/topsis_mutation/two_combined_plot.png")
     # plt.show()
 
     plt.plot(poly_history_avg)
@@ -214,13 +247,10 @@ if __name__ == "__main__":
     plt.savefig("plots/topsis_mutation/polynomial_mutation_plot.png")
     # plt.show()
 
-    plt.plot(top_percentage_history_avg)
+    plt.plot(topsis1_history_avg)
     plt.title("Topsis Mutation - Best Fitness Over Time")
     plt.xlabel("Evaluations (x100)")
     plt.ylabel("Best Fitness")
     plt.grid()
     plt.savefig("plots/topsis_mutation/top_percentage_averaging_mutation_plot.png")
     # plt.show()
-
-
-# Tests and comparisons: 
