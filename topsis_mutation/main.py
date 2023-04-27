@@ -14,6 +14,8 @@ from topsis_mutation.mutations.topsis_mutation import TopsisMutation
 from jmetal.problem.singleobjective.unconstrained import Rastrigin
 from topsis_mutation.problems.ackley import Ackley
 from topsis_mutation.problems.schwefel import Schwefel
+from topsis_mutation.problems.rosenbrock import Rosenbrock
+from topsis_mutation.problems.griewank import Griewank
 
 class CustomGeneticAlgorithm(GeneticAlgorithm):
 
@@ -88,9 +90,11 @@ class Application(tk.Tk):
         ttk.Label(general_frame, text="Problem Type:").grid(row=1, column=0)
         self.problem_type = tk.StringVar()
         self.problem_type.set("rastrigin")
-        ttk.Radiobutton(general_frame, text="Rastrigin", variable=self.problem_type, value="rastrigin").grid(row=1, column=1, padx=5, pady=5)
-        ttk.Radiobutton(general_frame, text="Ackley", variable=self.problem_type, value="ackley").grid(row=1, column=2, padx=5, pady=5)
-        ttk.Radiobutton(general_frame, text="Schwefel", variable=self.problem_type, value="schwefel").grid(row=1, column=3, padx=5, pady=5)
+        ttk.Radiobutton(general_frame, text="Rastrigin", variable=self.problem_type, value="Rastrigin").grid(row=1, column=1, padx=5, pady=5)
+        ttk.Radiobutton(general_frame, text="Ackley", variable=self.problem_type, value="Ackley").grid(row=1, column=2, padx=5, pady=5)
+        ttk.Radiobutton(general_frame, text="Schwefel", variable=self.problem_type, value="Schwefel").grid(row=1, column=3, padx=5, pady=5)
+        ttk.Radiobutton(general_frame, text="Rosenbrock", variable=self.problem_type, value="Rosenbrock").grid(row=1, column=4, padx=5, pady=5)
+        ttk.Radiobutton(general_frame, text="Griewank", variable=self.problem_type, value="Griewank").grid(row=1, column=5, padx=5, pady=5)
 
         # Number of variables
         ttk.Label(general_frame, text="Number of Variables:").grid(row=2, column=0, padx=5, pady=5)
@@ -250,12 +254,16 @@ class Application(tk.Tk):
         # Initialize the problem
         problem_type = self.problem_type.get()
         match problem_type:
-            case "rastrigin":
+            case "Rastrigin":
                 problem = Rastrigin(number_of_variables=number_of_variables)
-            case "ackley":
+            case "Ackley":
                 problem = Ackley(number_of_variables=number_of_variables)
-            case "schwefel":
+            case "Schwefel":
                 problem = Schwefel(number_of_variables=number_of_variables)
+            case "Rosenbrock":
+                problem = Rosenbrock(number_of_variables=number_of_variables)
+            case "Griewank":
+                problem = Griewank(number_of_variables=number_of_variables)
             case _:
                 problem = Rastrigin(number_of_variables=number_of_variables)
 
@@ -395,7 +403,7 @@ class Application(tk.Tk):
             selected_vars = {k: v for k, v in topsis3_params.items() if k in ["toBest", "fromWorst", "randomizedAngle", "randomizedPoint"]}
             options_str = ", ".join(opt for opt, value in selected_vars.items() if value)
             plt.plot(topsis3_history_avg, label=f"Topsis Mutation ({options_str})")
-        plt.title("Best Fitness Over Time")
+        plt.title(f"Best Fitness Over Time - {problem_type}")
         plt.xlabel(f"Evaluations ({max_evaluations})")
         plt.ylabel("Best Fitness")
         plt.legend()
