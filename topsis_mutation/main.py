@@ -198,11 +198,24 @@ class Application(tk.Tk):
         buttons_frame = ttk.Frame(self)
         buttons_frame.grid(row=3, column=0, columnspan=3, pady=10, sticky="nsew")
 
-        run_tests_button = ttk.Button(buttons_frame, text='Run Tests', command=self.run_tests)
-        run_tests_button.grid(row=0, column=0, padx=10)
+        # Plot frame
+        plot_frame = ttk.LabelFrame(self, text="Plotting Options")
+        plot_frame.grid(row=2, column=0, padx=10, pady=10, sticky="nsew")
+
+        # Plot type
+        ttk.Label(plot_frame, text="Plot Type:").grid(row=1, column=0)
+        self.plot_type = tk.StringVar()
+        self.plot_type.set("line")
+        ttk.Radiobutton(plot_frame, text="Line plot", variable=self.plot_type, value="line").grid(row=1, column=1, padx=5, pady=5)
+        ttk.Radiobutton(plot_frame, text="Box plot", variable=self.plot_type, value="box").grid(row=1, column=2, padx=5, pady=5)
 
         exit_button = ttk.Button(buttons_frame, text='Exit', command=self.destroy)
-        exit_button.grid(row=0, column=1, padx=10)
+        exit_button.grid(row=0, column=0, padx=20)
+
+        run_tests_button = ttk.Button(buttons_frame, text='Run Tests', command=self.run_tests)
+        run_tests_button.grid(row=0, column=1, padx=800)
+
+
 
     def toggle_poly_mutation_frame(self):
         enabled = self.poly_mutation_vars["enabled"].get()
@@ -389,27 +402,34 @@ class Application(tk.Tk):
             topsis3_history_avg = topsis3_history_sum / num_tests
 
         # All experiments comparison
-        if poly_enabled:
-            plt.plot(poly_history_avg, label="Polynomial Mutation")
-        if topsis1_params["enabled"]:
-            selected_vars = {k: v for k, v in topsis1_params.items() if k in ["toBest", "fromWorst", "randomizedAngle", "randomizedPoint"]}
-            options_str = ", ".join(opt for opt, value in selected_vars.items() if value)
-            plt.plot(topsis1_history_avg, label=f"Topsis Mutation ({options_str})")
-        if topsis2_params["enabled"]:
-            selected_vars = {k: v for k, v in topsis2_params.items() if k in ["toBest", "fromWorst", "randomizedAngle", "randomizedPoint"]}
-            options_str = ", ".join(opt for opt, value in selected_vars.items() if value)
-            plt.plot(topsis2_history_avg, label=f"Topsis Mutation ({options_str})")
-        if topsis3_params["enabled"]:
-            selected_vars = {k: v for k, v in topsis3_params.items() if k in ["toBest", "fromWorst", "randomizedAngle", "randomizedPoint"]}
-            options_str = ", ".join(opt for opt, value in selected_vars.items() if value)
-            plt.plot(topsis3_history_avg, label=f"Topsis Mutation ({options_str})")
-        plt.title(f"Best Fitness Over Time - {problem_type}")
-        plt.xlabel(f"Evaluations ({max_evaluations})")
-        plt.ylabel("Best Fitness")
-        plt.legend()
-        plt.grid()
-        plt.savefig("plots/topsis_mutation/all_combined_plot.png")
-        plt.show()
+        plot_type = self.plot_type.get()
+        match plot_type:
+            case "line":
+                if poly_enabled:
+                    plt.plot(poly_history_avg, label="Polynomial Mutation")
+                if topsis1_params["enabled"]:
+                    selected_vars = {k: v for k, v in topsis1_params.items() if k in ["toBest", "fromWorst", "randomizedAngle", "randomizedPoint"]}
+                    options_str = ", ".join(opt for opt, value in selected_vars.items() if value)
+                    plt.plot(topsis1_history_avg, label=f"Topsis Mutation ({options_str})")
+                if topsis2_params["enabled"]:
+                    selected_vars = {k: v for k, v in topsis2_params.items() if k in ["toBest", "fromWorst", "randomizedAngle", "randomizedPoint"]}
+                    options_str = ", ".join(opt for opt, value in selected_vars.items() if value)
+                    plt.plot(topsis2_history_avg, label=f"Topsis Mutation ({options_str})")
+                if topsis3_params["enabled"]:
+                    selected_vars = {k: v for k, v in topsis3_params.items() if k in ["toBest", "fromWorst", "randomizedAngle", "randomizedPoint"]}
+                    options_str = ", ".join(opt for opt, value in selected_vars.items() if value)
+                    plt.plot(topsis3_history_avg, label=f"Topsis Mutation ({options_str})")
+                plt.title(f"Best Fitness Over Time - {problem_type}")
+                plt.xlabel(f"Evaluations ({max_evaluations})")
+                plt.ylabel("Best Fitness")
+                plt.legend()
+                plt.grid()
+                plt.savefig("plots/topsis_mutation/line_plot.png")
+                plt.show()
+            case "box":
+                print("Unimplemented") # TODO: Implement box plot
+            case _:
+                print("Invalid plot type provided")
 
 if __name__ == "__main__":
    
