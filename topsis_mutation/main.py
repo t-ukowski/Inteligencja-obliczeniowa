@@ -68,6 +68,48 @@ def run_experiment(algorithm: CustomGeneticAlgorithm, max_evaluations: int):
     padded_history[len(algorithm.best_fitness_history):] = algorithm.best_fitness_history[-1]
     return padded_history
 
+    evaluations = 0
+    history = []
+
+    while evaluations < max_evaluations:
+        algorithm.step()
+        evaluations += 1
+
+        if evaluations % 100 == 0:
+            best_solution = algorithm.get_result()
+            history.append((evaluations, best_solution.variables, best_solution.objectives[0]))
+
+    best_solution = algorithm.get_result()
+    print("Solution: ", best_solution.variables)
+    print("Fitness: ", best_solution.objectives[0])
+
+    history_length = max_evaluations // 100
+    padded_history = np.zeros(history_length)
+    padded_history[:len(history)] = [item[2] for item in history]
+    padded_history[len(history):] = history[-1][2]
+    return padded_history
+
+    # fitness_history = np.zeros(int(max_evaluations / 100))
+    # chunk_fitness_values = []
+    # chunk_size = 200
+
+    # algorithm.init_progress()  # Initialize the algorithm's progress
+
+    # while algorithm.evaluations < max_evaluations:
+    #     algorithm.step()
+    #     if algorithm.evaluations % 100 == 0:
+    #         index = int(algorithm.evaluations / 100) - 1
+    #         fitness_history[index] = algorithm.get_best_solution().objectives[0]
+    #         if algorithm.evaluations % chunk_size == 0:
+    #             chunk_fitness_values.append([sol.objectives[0] for sol in algorithm.solutions])
+
+    # best_solution = algorithm.get_result()
+    # print("Solution: ", best_solution.variables)
+    # print("Fitness: ", best_solution.objectives[0])
+
+    # return fitness_history, chunk_fitness_values
+
+
 class Application(tk.Tk):
 
     def __init__(self):
@@ -239,6 +281,8 @@ class Application(tk.Tk):
                 else:
                     child.configure(state="disabled")
 
+
+
     def run_tests(self):
         # Read the parameters
         num_tests = int(self.num_tests.get())
@@ -286,6 +330,11 @@ class Application(tk.Tk):
         topsis2_history_sum = np.zeros(int(max_evaluations/100))
         topsis3_history_sum = np.zeros(int(max_evaluations/100))
         
+        poly_chunk_values = []
+        topsis1_chunk_values = []
+        topsis2_chunk_values = []
+        topsis3_chunk_values = []
+
         for _ in range(num_tests):
             # PolynomialMutation
             if poly_enabled:
@@ -301,8 +350,9 @@ class Application(tk.Tk):
                     selection=BinaryTournamentSelection(),
                     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
                 )
-                poly_history = run_experiment(poly_algorithm, max_evaluations)
+                poly_history, poly_chunk_values_i = run_experiment(poly_algorithm, max_evaluations)
                 poly_history_sum += poly_history
+                poly_chunk_values.append(poly_chunk_values_i)
             
             # TopsisMutation 1
             topsis1_params = topsis_mutation_params[0]
@@ -427,7 +477,40 @@ class Application(tk.Tk):
                 plt.savefig("plots/topsis_mutation/line_plot.png")
                 plt.show()
             case "box":
-                print("Unimplemented") # TODO: Implement box plot
+                chunk_labels = [f"{i * 200}-{(i + 1) * 200}" for i in range(int(max_evaluations / 200))]
+                algorithms = []
+
+                if poly_enabled:
+                    poly_chunk_values_avg = np.mean(poly_chunk_values, axis=0)
+                    algorithms.append(("Polynomial Mutation", poly_chunk_values_avg))
+
+                if topsis1_params["enabled"]:
+                    topsis1_chunk_values_avg = np.mean(topsis1_chunk_values, axis=0)
+                    algorithms.append((f"Topsis Mutation 1", topsis1_chunk_values_avg))
+
+                if topsis2_params["enabled"]:
+                    topsis2_chunk_values_avg = np.mean(topsis2_chunk_values, axis=0)
+                    algorithms.append((f"Topsis Mutation 2", topsis2_chunk_values_avg))
+
+                if topsis3_params["enabled"]:
+                    topsis3_chunk_values_avg = np.mean(topsis3_chunk_values, axis=0)
+                    algorithms.append((f"Topsis Mutation 3", topsis3_chunk_values_avg))
+
+                fig, ax = plt.subplots()
+                for label, chunk_values in algorithms:
+                    ax.boxplot(chunk_values, labels=chunk_labels, positions=np.arange(len(chunk_labels)) * len(algorithms), widths=0.6)
+
+                ax.set_xticks(np.arange(len(chunk_labels)) * len(algorithms) + len(algorithms) / 2)
+                ax.set_xticklabels(chunk_labels)
+                ax.set_title(f"Box Plots of Fitness for Each Chunk - {problem_type}")
+                ax.set_xlabel("Evaluations")
+                ax.set_ylabel("Fitness")
+                ax.legend([label for label, _ in algorithms])
+                plt.grid()
+                plt.savefig("plots/topsis_mutation/box_plot.png")
+                plt.show()
+                
+
             case _:
                 print("Invalid plot type provided")
 
