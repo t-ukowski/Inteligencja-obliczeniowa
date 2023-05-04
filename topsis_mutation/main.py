@@ -1,6 +1,7 @@
 # Window
 import tkinter as tk
 from tkinter import ttk
+from matplotlib import patches
 # Utils
 import numpy as np
 import matplotlib.pyplot as plt
@@ -16,6 +17,7 @@ from topsis_mutation.problems.ackley import Ackley
 from topsis_mutation.problems.schwefel import Schwefel
 from topsis_mutation.problems.rosenbrock import Rosenbrock
 from topsis_mutation.problems.griewank import Griewank
+from topsis_mutation.problems.weierstrass import ShiftedRotatedWeierstrass
 
 class CustomGeneticAlgorithm(GeneticAlgorithm):
 
@@ -68,47 +70,6 @@ def run_experiment(algorithm: CustomGeneticAlgorithm, max_evaluations: int):
     padded_history[len(algorithm.best_fitness_history):] = algorithm.best_fitness_history[-1]
     return padded_history
 
-    evaluations = 0
-    history = []
-
-    while evaluations < max_evaluations:
-        algorithm.step()
-        evaluations += 1
-
-        if evaluations % 100 == 0:
-            best_solution = algorithm.get_result()
-            history.append((evaluations, best_solution.variables, best_solution.objectives[0]))
-
-    best_solution = algorithm.get_result()
-    print("Solution: ", best_solution.variables)
-    print("Fitness: ", best_solution.objectives[0])
-
-    history_length = max_evaluations // 100
-    padded_history = np.zeros(history_length)
-    padded_history[:len(history)] = [item[2] for item in history]
-    padded_history[len(history):] = history[-1][2]
-    return padded_history
-
-    # fitness_history = np.zeros(int(max_evaluations / 100))
-    # chunk_fitness_values = []
-    # chunk_size = 200
-
-    # algorithm.init_progress()  # Initialize the algorithm's progress
-
-    # while algorithm.evaluations < max_evaluations:
-    #     algorithm.step()
-    #     if algorithm.evaluations % 100 == 0:
-    #         index = int(algorithm.evaluations / 100) - 1
-    #         fitness_history[index] = algorithm.get_best_solution().objectives[0]
-    #         if algorithm.evaluations % chunk_size == 0:
-    #             chunk_fitness_values.append([sol.objectives[0] for sol in algorithm.solutions])
-
-    # best_solution = algorithm.get_result()
-    # print("Solution: ", best_solution.variables)
-    # print("Fitness: ", best_solution.objectives[0])
-
-    # return fitness_history, chunk_fitness_values
-
 
 class Application(tk.Tk):
 
@@ -131,12 +92,13 @@ class Application(tk.Tk):
         # Problem type
         ttk.Label(general_frame, text="Problem Type:").grid(row=1, column=0)
         self.problem_type = tk.StringVar()
-        self.problem_type.set("rastrigin")
+        self.problem_type.set("Rastrigin")
         ttk.Radiobutton(general_frame, text="Rastrigin", variable=self.problem_type, value="Rastrigin").grid(row=1, column=1, padx=5, pady=5)
         ttk.Radiobutton(general_frame, text="Ackley", variable=self.problem_type, value="Ackley").grid(row=1, column=2, padx=5, pady=5)
         ttk.Radiobutton(general_frame, text="Schwefel", variable=self.problem_type, value="Schwefel").grid(row=1, column=3, padx=5, pady=5)
         ttk.Radiobutton(general_frame, text="Rosenbrock", variable=self.problem_type, value="Rosenbrock").grid(row=1, column=4, padx=5, pady=5)
         ttk.Radiobutton(general_frame, text="Griewank", variable=self.problem_type, value="Griewank").grid(row=1, column=5, padx=5, pady=5)
+        ttk.Radiobutton(general_frame, text="Shifted Rotated Weierstrass", variable=self.problem_type, value="Shifted Rotated Weierstrass").grid(row=1, column=6, padx=5, pady=5)
 
         # Number of variables
         ttk.Label(general_frame, text="Number of Variables:").grid(row=2, column=0, padx=5, pady=5)
@@ -281,7 +243,18 @@ class Application(tk.Tk):
                 else:
                     child.configure(state="disabled")
 
+    def generate_box_data(self, history_table, num_boxes=30, sampling_number=250):
+        section_size = int(sampling_number / num_boxes)
+        box_data = [[] for _ in range(num_boxes)]
 
+        for history in history_table:
+            for i in range(num_boxes):
+                start = i * section_size
+                end = start + section_size
+                section_avg = np.mean(history[start:end])
+                box_data[i].append(section_avg)
+
+        return box_data
 
     def run_tests(self):
         # Read the parameters
@@ -321,19 +294,20 @@ class Application(tk.Tk):
                 problem = Rosenbrock(number_of_variables=number_of_variables)
             case "Griewank":
                 problem = Griewank(number_of_variables=number_of_variables)
+            case "Shifted Rotated Weierstrass":
+                problem = ShiftedRotatedWeierstrass(number_of_variables=number_of_variables)
             case _:
                 problem = Rastrigin(number_of_variables=number_of_variables)
 
         # Run the experiments
-        poly_history_sum = np.zeros(int(max_evaluations/100))
-        topsis1_history_sum = np.zeros(int(max_evaluations/100))
-        topsis2_history_sum = np.zeros(int(max_evaluations/100))
-        topsis3_history_sum = np.zeros(int(max_evaluations/100))
-        
-        poly_chunk_values = []
-        topsis1_chunk_values = []
-        topsis2_chunk_values = []
-        topsis3_chunk_values = []
+        sampling_rate = 100
+        sampling_number = max_evaluations // sampling_rate
+
+
+        history_keys = ['poly', 'topsis1', 'topsis2', 'topsis3']
+
+        history_sum = {key: np.zeros(sampling_number) for key in history_keys}
+        history_table = {key: [] for key in history_keys}
 
         for _ in range(num_tests):
             # PolynomialMutation
@@ -350,9 +324,9 @@ class Application(tk.Tk):
                     selection=BinaryTournamentSelection(),
                     termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
                 )
-                poly_history, poly_chunk_values_i = run_experiment(poly_algorithm, max_evaluations)
-                poly_history_sum += poly_history
-                poly_chunk_values.append(poly_chunk_values_i)
+                poly_history = run_experiment(poly_algorithm, max_evaluations)
+                history_sum['poly'] += poly_history
+                history_table['poly'].append(poly_history)
             
             # TopsisMutation 1
             topsis1_params = topsis_mutation_params[0]
@@ -380,7 +354,8 @@ class Application(tk.Tk):
                 # Set the population for the mutation object
                 topsis1_algorithm.mutation_operator.set_mutation_population(topsis1_algorithm.solutions)
                 
-                topsis1_history_sum += topsis1_history
+                history_sum['topsis1'] += topsis1_history
+                history_table['topsis1'].append(topsis1_history)
 
 
             # TopsisMutation 2
@@ -409,7 +384,8 @@ class Application(tk.Tk):
                 # Set the population for the mutation object
                 topsis2_algorithm.mutation_operator.set_mutation_population(topsis2_algorithm.solutions)
                 
-                topsis2_history_sum += topsis2_history
+                history_sum['topsis2'] += topsis2_history
+                history_table['topsis2'].append(topsis2_history)
 
 
             # TopsisMutation 3
@@ -438,18 +414,19 @@ class Application(tk.Tk):
                 # Set the population for the mutation object
                 topsis3_algorithm.mutation_operator.set_mutation_population(topsis3_algorithm.solutions)
                 
-                topsis3_history_sum += topsis3_history
+                history_sum['topsis3'] += topsis3_history
+                history_table['topsis3'].append(topsis3_history)
 
 
         # Calculate average histories
         if poly_enabled:
-            poly_history_avg = poly_history_sum / num_tests
+            poly_history_avg = history_sum['poly'] / num_tests
         if topsis1_params["enabled"]:
-            topsis1_history_avg = topsis1_history_sum / num_tests
+            topsis1_history_avg = history_sum['topsis1'] / num_tests
         if topsis2_params["enabled"]:
-            topsis2_history_avg = topsis2_history_sum / num_tests
+            topsis2_history_avg = history_sum['topsis2'] / num_tests
         if topsis3_params["enabled"]:
-            topsis3_history_avg = topsis3_history_sum / num_tests
+            topsis3_history_avg = history_sum['topsis3'] / num_tests
 
         # All experiments comparison
         plot_type = self.plot_type.get()
@@ -477,39 +454,43 @@ class Application(tk.Tk):
                 plt.savefig("plots/topsis_mutation/line_plot.png")
                 plt.show()
             case "box":
-                chunk_labels = [f"{i * 200}-{(i + 1) * 200}" for i in range(int(max_evaluations / 200))]
-                algorithms = []
+                # Filter enabled mutation types
+                enabled_mutation_types = [(key, history_table[key]) for key in history_keys if len(history_table[key]) > 0]
 
-                if poly_enabled:
-                    poly_chunk_values_avg = np.mean(poly_chunk_values, axis=0)
-                    algorithms.append(("Polynomial Mutation", poly_chunk_values_avg))
+                num_boxes = 30
 
-                if topsis1_params["enabled"]:
-                    topsis1_chunk_values_avg = np.mean(topsis1_chunk_values, axis=0)
-                    algorithms.append((f"Topsis Mutation 1", topsis1_chunk_values_avg))
+                # Generate box data for each enabled mutation type
+                box_data_list = [self.generate_box_data(history, num_boxes, sampling_number) for _, history in enabled_mutation_types]
 
-                if topsis2_params["enabled"]:
-                    topsis2_chunk_values_avg = np.mean(topsis2_chunk_values, axis=0)
-                    algorithms.append((f"Topsis Mutation 2", topsis2_chunk_values_avg))
+                # Calculate box positions for side-by-side box plots
+                box_width = 0.8 / len(enabled_mutation_types)
+                box_positions = [
+                    [i + j * box_width for i in range(1, num_boxes + 1)]
+                    for j in range(len(enabled_mutation_types))
+                ]
 
-                if topsis3_params["enabled"]:
-                    topsis3_chunk_values_avg = np.mean(topsis3_chunk_values, axis=0)
-                    algorithms.append((f"Topsis Mutation 3", topsis3_chunk_values_avg))
+                # Plot the custom box plots side by side
+                for i, (mutation_type, _) in enumerate(enabled_mutation_types):
+                    plt.boxplot(box_data_list[i], positions=box_positions[i], widths=box_width, manage_ticks=False, patch_artist=True, boxprops=dict(facecolor="C" + str(i)))
 
-                fig, ax = plt.subplots()
-                for label, chunk_values in algorithms:
-                    ax.boxplot(chunk_values, labels=chunk_labels, positions=np.arange(len(chunk_labels)) * len(algorithms), widths=0.6)
+                # Customize x-axis ticks and labels
+                ax = plt.gca()
+                ax.set_xticks(range(1, num_boxes + 1))
+                ax.set_xticklabels(range(1, num_boxes + 1))
 
-                ax.set_xticks(np.arange(len(chunk_labels)) * len(algorithms) + len(algorithms) / 2)
-                ax.set_xticklabels(chunk_labels)
-                ax.set_title(f"Box Plots of Fitness for Each Chunk - {problem_type}")
-                ax.set_xlabel("Evaluations")
-                ax.set_ylabel("Fitness")
-                ax.legend([label for label, _ in algorithms])
-                plt.grid()
+                # Create a list of patches for the legend
+                legend_patches = [patches.Patch(color="C" + str(i), label=mutation_type) for i, (mutation_type, _) in enumerate(enabled_mutation_types)]
+
+                # Add the legend to the plot
+                plt.legend(handles=legend_patches) # TODO: make the legend appear akin to the line plot
+
+                # Plot the custom box plot
+                plt.title(f"Best Fitness Over Time - {problem_type}")
+                plt.xlabel("Section") # TODO: make section axis more readable - maybe go back to the evaluations instead of sections?
+                plt.ylabel("Fitness")
+                plt.grid(axis="y")
                 plt.savefig("plots/topsis_mutation/box_plot.png")
                 plt.show()
-                
 
             case _:
                 print("Invalid plot type provided")
