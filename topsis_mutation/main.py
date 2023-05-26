@@ -86,7 +86,7 @@ class Application(tk.Tk):
         # Number of tests
         ttk.Label(general_frame, text="Number of Tests:").grid(row=0, column=0)
         self.num_tests = ttk.Entry(general_frame)
-        self.num_tests.insert(0, "1")
+        self.num_tests.insert(0, "7")
         self.num_tests.grid(row=0, column=1)
 
         # Problem type
@@ -128,7 +128,7 @@ class Application(tk.Tk):
 
         # Polynomial mutation params
         self.poly_mutation_vars = {
-            "enabled": tk.BooleanVar(value=True),
+            "enabled": tk.BooleanVar(value=False), # Change "True" > "Flase"
         }
 
         self.poly_mutation_frame = ttk.LabelFrame(mutation_frame, text="Polynomial Mutation")
@@ -152,15 +152,34 @@ class Application(tk.Tk):
         self.topsis_mutation_vars = []
         for i in range(3):
             self.topsis_mutation_vars.append({
-                "probability": tk.DoubleVar(value=0.01),
-                "top_percentage": tk.DoubleVar(value=0.2),
-                "push_strength": tk.DoubleVar(value=0.1),
+                "probability": tk.DoubleVar(value=0.4),
+                "top_percentage": tk.DoubleVar(value=0.4),
+                "push_strength": tk.DoubleVar(value=0.4),
                 "toBest": tk.BooleanVar(),
                 "fromWorst": tk.BooleanVar(),
                 "randomizedAngle": tk.BooleanVar(),
                 "randomizedPoint": tk.BooleanVar(),
                 "enabled": tk.BooleanVar(value=True),
             })
+        self.topsis_mutation_vars[0]["toBest"].set(True)
+        self.topsis_mutation_vars[0]["fromWorst"].set(True)
+        
+        self.topsis_mutation_vars[1]["probability"].set(0.1)
+        self.topsis_mutation_vars[1]["top_percentage"].set(0.3)
+        self.topsis_mutation_vars[1]["push_strength"].set(0.6)
+        self.topsis_mutation_vars[1]["toBest"].set(True)
+        self.topsis_mutation_vars[1]["fromWorst"].set(True)
+        self.topsis_mutation_vars[1]["randomizedAngle"].set(True)
+
+
+        self.topsis_mutation_vars[2]["probability"].set(0.07)
+        self.topsis_mutation_vars[2]["top_percentage"].set(0.25)
+        self.topsis_mutation_vars[2]["push_strength"].set(0.4)
+        self.topsis_mutation_vars[2]["toBest"].set(True)
+        self.topsis_mutation_vars[2]["fromWorst"].set(True)
+        self.topsis_mutation_vars[2]["randomizedAngle"].set(True)
+
+
         for i in range(3):
             topsis_mutation_frame = ttk.LabelFrame(mutation_frame, text=f"Topsis Mutation {i+1}")
             topsis_mutation_frame.grid(row=1, column=i, padx=5)
@@ -469,24 +488,30 @@ class Application(tk.Tk):
                     for j in range(len(enabled_mutation_types))
                 ]
 
+                legend_patches = []
+
                 # Plot the custom box plots side by side
                 for i, (mutation_type, _) in enumerate(enabled_mutation_types):
                     plt.boxplot(box_data_list[i], positions=box_positions[i], widths=box_width, manage_ticks=False, patch_artist=True, boxprops=dict(facecolor="C" + str(i)))
+
+                    # Add selected parameters to the legend
+                    selected_vars = {k: v for k, v in eval(mutation_type + '_params').items() if k in ["toBest", "fromWorst", "randomizedAngle", "randomizedPoint"]}
+                    options_str = ", ".join(opt for opt, value in selected_vars.items() if value)
+                    # legend_label = f"{mutation_type} ({options_str})" # TODO: code below shows Topsis Mutation even if polynomial mutation is selected
+                    legend_label = f"Topsis Mutation ({options_str})"
+                    legend_patches.append(patches.Patch(color="C" + str(i), label=legend_label))
 
                 # Customize x-axis ticks and labels
                 ax = plt.gca()
                 ax.set_xticks(range(1, num_boxes + 1))
                 ax.set_xticklabels(range(1, num_boxes + 1))
 
-                # Create a list of patches for the legend
-                legend_patches = [patches.Patch(color="C" + str(i), label=mutation_type) for i, (mutation_type, _) in enumerate(enabled_mutation_types)]
-
                 # Add the legend to the plot
-                plt.legend(handles=legend_patches) # TODO: make the legend appear akin to the line plot
+                plt.legend(handles=legend_patches)
 
                 # Plot the custom box plot
                 plt.title(f"Best Fitness Over Time - {problem_type}")
-                plt.xlabel("Section") # TODO: make section axis more readable - maybe go back to the evaluations instead of sections?
+                plt.xlabel("Section")
                 plt.ylabel("Fitness")
                 plt.grid(axis="y")
                 plt.savefig("plots/topsis_mutation/box_plot.png")

@@ -1,5 +1,5 @@
 {
-  "num_tests": 1,
+  "num_tests": 7,
   "problem": "ackley",
   "number_of_variables": 100,
   "genetic_algorithm_params": {
@@ -12,27 +12,27 @@
     "distribution_index": 20
   },
   "topsis1_params": {
-    "probability": 0.01,
-    "top_percentage": 0.2,
-    "push_strength": 0.1,
+    "probability": 0.4,
+    "top_percentage": 0.4,
+    "push_strength": 0.4,
     "toBest": true,
     "fromWorst": true,
     "randomizedAngle": false,
     "randomizedPoint": false
   },
   "topsis2_params": {
-    "probability": 0.01,
-    "top_percentage": 0.2,
-    "push_strength": 0.1,
+    "probability": 0.4,
+    "top_percentage": 0.4,
+    "push_strength": 0.4,
     "toBest": true,
     "fromWorst": true,
     "randomizedAngle": true,
     "randomizedPoint": false
   },
   "topsis3_params": {
-    "probability": 0.01,
-    "top_percentage": 0.2,
-    "push_strength": 0.1,
+    "probability": 0.4,
+    "top_percentage": 0.4,
+    "push_strength": 0.4,
     "toBest": true,
     "fromWorst": true,
     "randomizedAngle": false,
