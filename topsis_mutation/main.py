@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 # JMetalPy
 from jmetal.algorithm.singleobjective import GeneticAlgorithm
-from jmetal.operator import SBXCrossover, PolynomialMutation, BinaryTournamentSelection
+from jmetal.operator import SBXCrossover, PolynomialMutation, BinaryTournamentSelection, SimpleRandomMutation, UniformMutation
 from jmetal.util.termination_criterion import StoppingByEvaluations
 # Mutations
 from topsis_mutation.mutations.topsis_mutation import TopsisMutation
@@ -126,9 +126,26 @@ class Application(tk.Tk):
         mutation_frame = ttk.LabelFrame(self, text="Mutation Options")
         mutation_frame.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
 
+        # SimpleRandom mutation params
+        self.simple_mutation_vars = {
+            "enabled": tk.BooleanVar(value=True), # Change "True" > "Flase"
+        }
+
+        self.simple_mutation_frame = ttk.LabelFrame(mutation_frame, text="Simple Random Mutation")
+        self.simple_mutation_frame.grid(row=0, column=0, padx=5, pady=5)
+
+        ttk.Label(self.simple_mutation_frame, text="Probability").grid(row=0, column=0, padx=5, pady=5, sticky="w")
+        self.simple_mutation_probability = ttk.Entry(self.simple_mutation_frame)
+        self.simple_mutation_probability.insert(0, "0.01")
+        self.simple_mutation_probability.grid(row=0, column=1, padx=5, pady=5, sticky="w")
+
+        # The on/off button
+        self.simple_on_off_button = ttk.Checkbutton(self.simple_mutation_frame, text="Enable", variable=self.simple_mutation_vars["enabled"], command=self.toggle_simple_mutation_frame)
+        self.simple_on_off_button.grid(row=0, column=2, sticky="w")
+
         # Polynomial mutation params
         self.poly_mutation_vars = {
-            "enabled": tk.BooleanVar(value=False), # Change "True" > "Flase"
+            "enabled": tk.BooleanVar(value=True), # Change "True" > "Flase"
         }
 
         self.poly_mutation_frame = ttk.LabelFrame(mutation_frame, text="Polynomial Mutation")
@@ -147,6 +164,28 @@ class Application(tk.Tk):
         # The on/off button
         self.poly_on_off_button = ttk.Checkbutton(self.poly_mutation_frame, text="Enable", variable=self.poly_mutation_vars["enabled"], command=self.toggle_poly_mutation_frame)
         self.poly_on_off_button.grid(row=0, column=2, sticky="w")
+
+        # Uniform mutation params
+        self.uniform_mutation_vars = {
+            "enabled": tk.BooleanVar(value=True), # Change "True" > "Flase"
+        }
+
+        self.uniform_mutation_frame = ttk.LabelFrame(mutation_frame, text="Uniform Mutation")
+        self.uniform_mutation_frame.grid(row=0, column=2, padx=5, pady=5)
+
+        ttk.Label(self.uniform_mutation_frame, text="Probability").grid(row=0, column=0, padx=5, pady=5, sticky="w")
+        self.uniform_mutation_probability = ttk.Entry(self.uniform_mutation_frame)
+        self.uniform_mutation_probability.insert(0, "0.01")
+        self.uniform_mutation_probability.grid(row=0, column=1, padx=5, pady=5, sticky="w")
+
+        ttk.Label(self.uniform_mutation_frame, text="Perturbation").grid(row=1, column=0, padx=5, pady=5, sticky="w")
+        self.uniform_mutation_perturbation = ttk.Entry(self.uniform_mutation_frame)
+        self.uniform_mutation_perturbation.insert(0, "0.3")
+        self.uniform_mutation_perturbation.grid(row=1, column=1, padx=5, pady=5, sticky="w")
+
+        # The on/off button
+        self.uniform_on_off_button = ttk.Checkbutton(self.uniform_mutation_frame, text="Enable", variable=self.uniform_mutation_vars["enabled"], command=self.toggle_uniform_mutation_frame)
+        self.uniform_on_off_button.grid(row=0, column=2, sticky="w")
 
         # Topsis mutation params
         self.topsis_mutation_vars = []
@@ -239,12 +278,31 @@ class Application(tk.Tk):
         run_tests_button.grid(row=0, column=1, padx=800)
 
 
+    def toggle_simple_mutation_frame(self):
+        enabled = self.simple_mutation_vars["enabled"].get()
+
+        for child in self.simple_mutation_frame.winfo_children():
+            if (isinstance(child, ttk.Entry) or isinstance(child, ttk.Checkbutton) or isinstance(child, ttk.Label)) and child != self.simple_on_off_button:
+                if enabled:
+                    child.configure(state="normal")
+                else:
+                    child.configure(state="disabled")
 
     def toggle_poly_mutation_frame(self):
         enabled = self.poly_mutation_vars["enabled"].get()
 
         for child in self.poly_mutation_frame.winfo_children():
             if (isinstance(child, ttk.Entry) or isinstance(child, ttk.Checkbutton) or isinstance(child, ttk.Label)) and child != self.poly_on_off_button:
+                if enabled:
+                    child.configure(state="normal")
+                else:
+                    child.configure(state="disabled")
+
+    def toggle_uniform_mutation_frame(self):
+        enabled = self.uniform_mutation_vars["enabled"].get()
+
+        for child in self.uniform_mutation_frame.winfo_children():
+            if (isinstance(child, ttk.Entry) or isinstance(child, ttk.Checkbutton) or isinstance(child, ttk.Label)) and child != self.uniform_on_off_button:
                 if enabled:
                     child.configure(state="normal")
                 else:
@@ -283,10 +341,19 @@ class Application(tk.Tk):
         offspring_population_size = int(self.offspring_population_size.get())
         max_evaluations = int(self.max_evaluations.get())
 
+        simple_enabled = self.simple_mutation_vars["enabled"].get()
+        if simple_enabled:
+            simple_mutation_probability = float(self.simple_mutation_probability.get())
+
         poly_enabled = self.poly_mutation_vars["enabled"].get()
         if poly_enabled:
             poly_mutation_probability = float(self.poly_mutation_probability.get())
             poly_mutation_distribution = float(self.poly_mutation_distribution.get())
+        
+        uniform_enabled = self.uniform_mutation_vars["enabled"].get()
+        if uniform_enabled:
+            uniform_mutation_probability = float(self.uniform_mutation_probability.get())
+            uniform_mutation_perturbation = float(self.uniform_mutation_perturbation.get())
 
         topsis_mutation_params = []
         for mutation_var in self.topsis_mutation_vars:
@@ -323,12 +390,29 @@ class Application(tk.Tk):
         sampling_number = max_evaluations // sampling_rate
 
 
-        history_keys = ['poly', 'topsis1', 'topsis2', 'topsis3']
+        history_keys = ['simple', 'poly', 'uniform', 'topsis1', 'topsis2', 'topsis3']
 
         history_sum = {key: np.zeros(sampling_number) for key in history_keys}
         history_table = {key: [] for key in history_keys}
 
         for _ in range(num_tests):
+            # SimpleRandomMutation
+            if simple_enabled:
+                simple_algorithm = CustomGeneticAlgorithm(
+                    problem=problem,
+                    population_size=population_size,
+                    offspring_population_size=offspring_population_size,
+                    mutation=SimpleRandomMutation(
+                        probability=simple_mutation_probability,
+                    ),
+                    crossover=SBXCrossover(probability=0.9, distribution_index=20),
+                    selection=BinaryTournamentSelection(),
+                    termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+                )
+                simple_history = run_experiment(simple_algorithm, max_evaluations)
+                history_sum['simple'] += simple_history
+                history_table['simple'].append(simple_history)
+
             # PolynomialMutation
             if poly_enabled:
                 poly_algorithm = CustomGeneticAlgorithm(
@@ -346,6 +430,24 @@ class Application(tk.Tk):
                 poly_history = run_experiment(poly_algorithm, max_evaluations)
                 history_sum['poly'] += poly_history
                 history_table['poly'].append(poly_history)
+
+            # UniformMutation
+            if uniform_enabled:
+                uniform_algorithm = CustomGeneticAlgorithm(
+                    problem=problem,
+                    population_size=population_size,
+                    offspring_population_size=offspring_population_size,
+                    mutation=UniformMutation(
+                        probability=uniform_mutation_probability,
+                        perturbation=uniform_mutation_perturbation
+                    ),
+                    crossover=SBXCrossover(probability=0.9, distribution_index=20),
+                    selection=BinaryTournamentSelection(),
+                    termination_criterion=StoppingByEvaluations(max_evaluations=max_evaluations)
+                )
+                uniform_history = run_experiment(uniform_algorithm, max_evaluations)
+                history_sum['uniform'] += uniform_history
+                history_table['uniform'].append(uniform_history)
             
             # TopsisMutation 1
             topsis1_params = topsis_mutation_params[0]
@@ -438,8 +540,12 @@ class Application(tk.Tk):
 
 
         # Calculate average histories
+        if simple_enabled:
+            simple_history_avg = history_sum['simple'] / num_tests
         if poly_enabled:
             poly_history_avg = history_sum['poly'] / num_tests
+        if uniform_enabled:
+            uniform_history_avg = history_sum['uniform'] / num_tests
         if topsis1_params["enabled"]:
             topsis1_history_avg = history_sum['topsis1'] / num_tests
         if topsis2_params["enabled"]:
@@ -451,8 +557,12 @@ class Application(tk.Tk):
         plot_type = self.plot_type.get()
         match plot_type:
             case "line":
+                if simple_enabled:
+                    plt.plot(simple_history_avg, label="Simple Random Mutation")
                 if poly_enabled:
                     plt.plot(poly_history_avg, label="Polynomial Mutation")
+                if uniform_enabled:
+                    plt.plot(uniform_history_avg, label="Uniform Mutation")
                 if topsis1_params["enabled"]:
                     selected_vars = {k: v for k, v in topsis1_params.items() if k in ["toBest", "fromWorst", "randomizedAngle", "randomizedPoint"]}
                     options_str = ", ".join(opt for opt, value in selected_vars.items() if value)
